@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from abc import *
 import pandas as pd
 import numpy as np
+import json
+import googlemaps
 
 @dataclass
 class File(object):
@@ -59,11 +61,15 @@ class Reader(ReaderBase):
     def csv(self, file) -> object:
         return pd.read_csv(f'{self.new_file((file))}.csv', encoding='UTF-8', thousands=',')
 
-    def xls(self, file) -> object:
-        pass
+    def xls(self, file, header, usecols) -> object:
+        return pd.read_excel(f'{self.new_file((file))}.xls', header=header, usecols=usecols)
 
-    def json(self):
-        pass
+    def json(self, file) -> object:
+        return json.load(open(f'{self.new_file((file))}.json'), encoding='UTF-8')
+
+    def gmaps(self) -> object:
+        return googlemaps.Client(key='')
+
 
 class Printer(PrinterBase):
     def dframe(self, this):
@@ -75,5 +81,36 @@ class Printer(PrinterBase):
         print(f'5. Target null 의 갯수\n {this.isnull().sum()}개')
         print('*' * 100)
 
-class Service(ReaderBase)
+class Service(Reader):
+
+    def __init__(self):
+        self.file = File()
+        self.reader = Reader()
+        self.printer = Printer()
+
+        self.crime_rate_columns = ['살인검거율', '강도검거율', '강간검거율', '절도검거율', '폭력검거율']
+        self.crime_columns = ['살인', '강도', '강간', '절도', '폭력']
+
+    def save_plolice_pos(self):
+        file = self.file
+        reader = self.reader
+        printer = self.printer
+
+        file.context = './data/'
+        file.fname = 'crime_in_seoul'
+        crime = reader.csv(file)
+        # printer.dframe(crime)
+        station_names = []
+        for name in crime['관서명']:
+            station_names.append('서울' + str(name[:-1] + '경찰서'))
+        station_addrs = []
+        station_lats = []
+        station_lngs = []
+        gmaps = reader.gmaps()
+
+
+if __name__ == '__main__':
+
+    s = Service()
+    s.save_plolice_pos()
 
